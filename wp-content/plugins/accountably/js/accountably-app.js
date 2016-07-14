@@ -12,41 +12,68 @@ $.validator.addMethod("wordCount",
    jQuery.format("Only {0} words allowed.")
 );
 
+$.validator.addMethod("phoneValidate", function(number, element) {
+    number = number.replace(/\s+/g, ""); 
+    return this.optional(element) || number.length > 9 &&
+        number.match(/^(1-?)?(\([2-9]\d{2}\)|[2-9]\d{2})-?[2-9]\d{2}-?\d{4}$/);
+}, "Please specify a valid phone number");
+
 $("#signup_form").validate({
         rules: {
-          first_name: {
-			required: true,
-			minlength: 2
-		},
-          email: {// compound rule
-          required: true,
-          email: true
-        },
-          confirm_email: {// compound rule
-          required: false,
-          email: true,
-          equalTo: "#email"
-        },
-          last_name: {
-			required: true,
-			minlength: 2
-		},
-          age: {
-			required: true,
-			digits: true
-		},
-          location: "required",
-          industry: "required",
-          title: "required",
-		  goal: {
-			 required: true,
-			 wordCount: ['100']
-		  },
+	        first_name: {
+			  required: true,
+			  minlength: 2
+			},
+	        last_name: {
+			  required: true,
+			  minlength: 2
+			},
+	        email: {// compound rule
+	          required: true,
+	          email: true
+	        },
+	        confirm_email: {// compound rule
+	          required: false,
+	          email: true,
+	          equalTo: "#email"
+	        },
+	        phone: {
+		      required: false,
+		      phoneValidate: true
+		    },
+	        age: {
+			  required: true,
+			  digits: true
+			},
+	        location: "required",
+	          industry: "required",
+	          title: "required",
+			goal: {
+			  required: true,
+			  wordCount: ['100']
+			},
 		 },
         messages: {
 		  goal: "Your goal must be 100 words or less."
         }
       });
+
+	$('#phone').on('input', function() {
+	    var number = $(this).val().replace(/[^\d]/g, '')
+	    if (number.length == 7) {
+	      number = number.replace(/(\d{3})(\d{4})/, "$1-$2");
+	    } else if (number.length == 10) {
+	      number = number.replace(/(\d{3})(\d{3})(\d{4})/, "($1) $2-$3");
+	    }
+	    $(this).val(number)
+	});
+
+	$(function() {
+		var url = '/wp-content/plugins/accountably/';
+	    $( "#industry" ).autocomplete({
+	        source: url+'search.php'
+	    });
+	});
 
 // setInterval(function(){
 //   var form = $('#volunteer_form');

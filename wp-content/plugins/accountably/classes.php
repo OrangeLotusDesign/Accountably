@@ -132,9 +132,9 @@ Class Users {
     
 
     // This function needs to be updated to be based on available -----------
-    public function GetAvailable() {
+    public function GetAvailable($OrderBy) {
       global $wpdb;
-      $dbResult = $wpdb->get_results("SELECT * FROM ".$wpdb->prefix."accountably_user WHERE available = '1';");
+      $dbResult = $wpdb->get_results("SELECT * FROM ".$wpdb->prefix."accountably_user WHERE available = '1' AND active = '1' ORDER BY $OrderBy ASC, last_name ASC;");
       $this->DBToObjectArray($dbResult);
 
       return $this->outputArray; 

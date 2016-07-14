@@ -179,6 +179,8 @@ function init_sessions() {
 }
 add_action('init', 'init_sessions');
 
+
+
 // Volunteer Header
 add_action('wp_head', 'the_form_header');
 function the_form_header() {
@@ -188,10 +190,15 @@ if(@file_exists(TEMPLATEPATH.'/accountably-app.css')) {
   } else {
     echo '<link rel="stylesheet" href="'.WP_PLUGIN_URL.'/accountably/accountably-app.css" type="text/css" media="screen" />'."\n";
   }
-echo '<script type="text/javascript" src="'.plugins_url( 'js/jquery-2.2.1.min.js' , __FILE__ ).'"></script>
+echo '<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+<script type="text/javascript" src="'.plugins_url( 'js/jquery-2.2.1.min.js' , __FILE__ ).'"></script>
+<script   src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"   integrity="sha256-xNjb53/rY+WmG+4L6tTl9m6PpqknWZvRt0rO1SRnJzw="   crossorigin="anonymous"></script>
 <script type="text/javascript" src="'.plugins_url( 'js/jquery.validate.min.js' , __FILE__ ).'"></script>
 <script type="text/javascript" src="'.plugins_url( 'js/accountably-app.js' , __FILE__ ).'"></script>';
 echo "<script src='https://www.google.com/recaptcha/api.js'></script>";
+
+wp_enqueue_script('mylib', plugins_url() . '/accountably/js/accountably-app.js');
+wp_localize_script('mylib', 'WPURLS', array( 'plugin_url' => get_option('plugin_url') ));
 }
 
 function admin_header() {

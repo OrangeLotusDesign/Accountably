@@ -40,7 +40,7 @@ get_currentuserinfo();
 		<div class="row">
 			<div class="medium-6 columns">
 				<label>Phone <small>(For us only, not for sharing.)</small>
-					<input type="text" name="phone" id="phone" placeholder="212-555-5555">
+					<input type="text" name="phone" id="phone" placeholder="(212) 555-5555">
 				</label>
 			</div>
 			<div class="medium-6 columns">
@@ -55,7 +55,7 @@ get_currentuserinfo();
 					<input type="text" name="location" id="location" placeholder="Little China">
 				</label>
 			</div>
-			<div class="medium-6 columns">
+			<div class="medium-6 columns ui-widget">
 				<label>Industry*
 					<input type="text" name="industry" id="industry" placeholder="Transportation">
 				</label>

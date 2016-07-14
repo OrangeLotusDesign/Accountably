@@ -420,7 +420,9 @@ add_action( 'plugins_loaded', function () {
 function partnership_form_page_handler()
 {
     global $wpdb;
-    $table_name = $wpdb->prefix . 'accountably_partners'; // do not forget about tables prefix
+    $table_name = $wpdb->prefix . 'accountably_partnership'; // do not forget about tables prefix
+    $relational_table = $wpdb->prefix . 'accountably_partnerships'; // do not forget about tables prefix
+    $user_table = $wpdb->prefix . 'accountably_user'; // do not forget about tables prefix
 
     $message = '';
     $notice = '';
@@ -430,45 +432,52 @@ function partnership_form_page_handler()
 	$current_time = date('Y-m-d G:i:s');
 
     $default = array(
-        'id' => 0,
-        'timestamp' => $current_time,
-        'confirmed' => 1,
-        'first_name' => '',
-        'last_name' => '',
-        'email' => '',
-        'phone' => '',
-        'age' => null,
-        'location' => '',
-        'industry' => '',
-        'job_title' => '',
-        'goal' => '',
-        'teammate' => '',
-        'active' => '',
+        'partnership_id' => 0,
+        'create_time' => $current_time,
+        'active' => '1',
+        'health' => '',
         'notes' => '',
+    );
+
+    $relation = array(
+        'partnership_id' => 0,
+        'user_id' => $_POST['user_id'],
     );
 
     // here we are verifying does this request is post back and have correct nonce
     if (wp_verify_nonce($_REQUEST['nonce'], basename(__FILE__))) {
         // combine our default item with request params
         $item = shortcode_atts($default, $_REQUEST);
+        $partnership = shortcode_atts($relation, $_REQUEST);
         // validate data, and if all ok save item to database
         // if id is zero insert otherwise update
         $item_valid = validate_partnership($item);
         if ($item_valid === true) {
-            if ($item['id'] == 0) {
+            if ($item['partnership_id'] == 0) {
                 $result = $wpdb->insert($table_name, $item);
-                $item['id'] = $wpdb->insert_id;
+                //need to update each user to set availability to 0. All of this is probably best done through an ajax call that creates the relationship and updates the users.
+                $relation['partnership_id'] = $wpdb->insert_id;
+                // $relation['user_id'][ ] = 16;
+                // $relation['user_id'][ ] = 17;
+				    // $color_fruit is an array
+				    foreach ($relation['user_id'] as $partner) {
+				    	// echo "Partnership ID: ".$relation['partnership_id']." User ID: ".$partner;
+				    	// $message = __("Partnership ID: ".$relation['partnership_id']." User ID: ".$user_id, 'custom_table_example');
+		                $result = $wpdb->insert($relational_table, array('partnership_id'=>$relation['partnership_id'], 'user_id'=>$partner));
+		                $result = $wpdb->update($user_table, array('available'=>0), array('user_id'=>$partner));
+				    }
                 if ($result) {
-                    $message = __('Item was successfully saved', 'custom_table_example');
+                    $message = __('Partnership was successfully saved', 'custom_table_example');
+                    // $new_partnership = 
                 } else {
-                    $notice = __('There was an error while saving item', 'custom_table_example');
+                    $notice = __('There was an error while saving the partnership', 'custom_table_example');
                 }
             } else {
-                $result = $wpdb->update($table_name, $item, array('id' => $item['id']));
+                $result = $wpdb->update($table_name, $item, array('partnership_id' => $item['partnership_id']));
                 if ($result) {
-                    $message = __('Item was successfully updated', 'custom_table_example');
+                    $message = __('Partnership was successfully updated', 'custom_table_example');
                 } else {
-                    $notice = __('There was an error while updating item', 'custom_table_example');
+                    $notice = __('There was an error while updating the partnership', 'custom_table_example');
                 }
             }
         } else {
@@ -489,8 +498,8 @@ function partnership_form_page_handler()
     }
 
     // here we adding our custom meta box
-    add_meta_box('persons_form_meta_box', 'Partner Details', 'partnership_form_meta_box_handler', 'person', 'core', 'default');
-    add_meta_box('member_date_meta_box', 'Satus', 'partnership_date_meta_box_handler', 'person', 'side', 'default');
+    add_meta_box('persons_form_meta_box', 'Create Partnership', 'partnership_form_meta_box_handler', 'person', 'core', 'default');
+    add_meta_box('member_date_meta_box', 'Available Members', 'partnership_date_meta_box_handler', 'person', 'side', 'default');
 
     ?>
 <div class="wrap">
@@ -513,12 +522,13 @@ function partnership_form_page_handler()
 		        <input type="hidden" name="nonce" value="<?php echo wp_create_nonce(basename(__FILE__))?>"/>
 		        <?php /* NOTICE: here we storing id to determine will be item added or updated */ ?>
 		        <input type="hidden" name="id" value="<?php echo $item['id'] ?>"/>
-		        <input type="hidden" name="confirmed" value="1" id="confirmed" />
+		        <input type="hidden" name="user_id[]" value="" id="user_id1" />
+		        <input type="hidden" name="user_id[]" value="" id="user_id2" />
 		        <input type="hidden" name="active" value="1" id="active" />
                     <?php /* And here we call our custom meta box */ ?>
                     <?php do_meta_boxes('person', 'core', $item); ?>
                     
-                    <input type="submit" value="<?php _e('Save', 'custom_table_example')?>" id="submit" class="button-primary" name="submit">
+                    <input type="submit" value="<?php _e('Create Partnership', 'custom_table_example')?>" id="submit" class="button-primary" name="submit">
 			    </form>
             </div>
             <div id="postbox-container-1" class="postbox-container">
@@ -542,99 +552,114 @@ function partnership_form_page_handler()
 function partnership_form_meta_box_handler($item)
 {
     ?>
+<style>
+.member-item {
+	width: auto;
+	padding: 10px;
+	border: solid 1px #ccc;
+	background-color: #efefef;
+	margin-bottom: 5px;
+}
+.partner-drop {
+	float: left;
+	width: 300px;
+	height: 300px;
+	margin: 20px;
+	padding: 40px;
+	border: dashed 1px #ccc;
+}
+.partner-drop h3 {
+	color: #ccc;
+	font-size: 24px;
+	font-weight: 100;
+	text-align: center;
+}
 
-<table cellspacing="2" cellpadding="5" style="width: 100%;" class="form-table">
-    <tbody>
-    <tr class="form-field">
-        <th valign="top" scope="row">
-            <label for="first_name">First Name</label>
-        </th>
-        <td>
-            <input id="first_name" name="first_name" type="text" style="width: 95%" value="<?= esc_attr($item['first_name'])?>" size="50" class="code" placeholder="Jack" required>
-        </td>
-    </tr>
-    <tr class="form-field">
-        <th valign="top" scope="row">
-            <label for="last_name">Last Name</label>
-        </th>
-        <td>
-            <input id="last_name" name="last_name" type="text" style="width: 95%" value="<?= esc_attr($item['last_name'])?>" size="50" class="code" placeholder="Burton" required>
-        </td>
-    </tr>
-    <tr class="form-field">
-        <th valign="top" scope="row">
-            <label for="email">Email Address</label>
-        </th>
-        <td>
-            <input id="email" name="email" type="email" style="width: 95%" value="<?= esc_attr($item['email'])?>" size="50" class="code" placeholder="me@jackburton.com" required>
-        </td>
-    </tr>
-    <tr class="form-field">
-        <th valign="top" scope="row">
-            <label for="phone">Phone</label>
-        </th>
-        <td>
-            <input id="phone" name="phone" type="text" style="width: 95%" value="<?= esc_attr($item['phone'])?>" size="50" class="code" placeholder="212-555-5555">
-        </td>
-    </tr>
-    <tr class="form-field">
-        <th valign="top" scope="row">
-            <label for="age">Age</label>
-        </th>
-        <td>
-            <input id="age" name="age" type="number" style="width: 95%" value="<?= esc_attr($item['age'])?>" size="50" class="code" placeholder="33" required>
-        </td>
-    </tr>
-    <tr class="form-field">
-        <th valign="top" scope="row">
-            <label for="location">Location</label>
-        </th>
-        <td>
-            <input id="location" name="location" type="text" style="width: 95%" value="<?= esc_attr($item['location'])?>" size="50" class="code" placeholder="Little China" required>
-        </td>
-    </tr>
-    <tr class="form-field">
-        <th valign="top" scope="row">
-            <label for="industry">Industry</label>
-        </th>
-        <td>
-            <input id="industry" name="industry" type="text" style="width: 95%" value="<?= esc_attr($item['industry'])?>" size="50" class="code" placeholder="Transportation" required>
-        </td>
-    </tr>
-    <tr class="form-field">
-        <th valign="top" scope="row">
-            <label for="job_title">Title</label>
-        </th>
-        <td>
-            <input id="job_title" name="job_title" type="text" style="width: 95%" value="<?= esc_attr($item['job_title'])?>" size="50" class="code" placeholder="President" required>
-        </td>
-    </tr>
-    <tr class="form-field">
-        <th valign="top" scope="row">
-            <label for="goal">Goal</label>
-        </th>
-        <td>
-            <textarea id="goal" name="goal" type="text" style="width: 95%" size="50" class="code" placeholder="Getting my truck back." required><?= esc_attr($item['goal'])?></textarea>
-        </td>
-    </tr>
-    <tr class="form-field">
-        <th valign="top" scope="row">
-            <label for="notes">Notes</label>
-        </th>
-        <td>
-        	<?php
-        	$content = $item['notes'];
-			$editor_id = 'notes';
-			$settings = array( 'media_buttons' => false );
+.partner-drop-active, .partner-drop-active h3 {
+	border-color: #a8bf12;
+	color: #a8bf12;
+}
 
-			wp_editor( $content, $editor_id, $settings );
+.partner-drop-hover, .partner-drop-hover h3 {
+	border-color: #ff8400;
+	color: #ff8400;
+}
+</style>
+ 
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+ 
+<script type="text/javascript">
+ 
+$( init );
+ 
+function init() {
+  $('.member-item').draggable({
+    cursor: 'move',
+    containment: 'document',
+    revert : function(event, ui) {
+        // on older version of jQuery use "draggable"
+        // $(this).data("draggable")
+        $(this).data("uiDraggable").originalPosition = {
+            top : 0,
+            left : 0
+        };
+        return !event;
+        // return (event !== false) ? false : true;
+    }
 
-			?>
-            <!-- <textarea id="notes" name="notes" type="text" style="width: 95%" size="50" height="100" class="code" placeholder="Consider this your captain's log."><?= esc_attr($item['notes'])?></textarea> -->
-        </td>
-    </tr>
-    </tbody>
-</table>
+  });
+  $('.partner-drop').droppable( {
+  	accept: '.member-item',
+  	hoverClass: 'partner-drop-hover',
+  	activeClass: 'partner-drop-active',
+    drop: handleDropEvent,
+    out: handleDropOut
+  } );
+  $('.partner-drop').droppable( {
+  	accept: '.member-item',
+  	hoverClass: 'partner-drop-hover',
+  	activeClass: 'partner-drop-active',
+    drop: handleDropEvent,
+    out: handleDropOut
+  } );
+}
+ 
+function handleDropEvent( event, ui ) {
+  var draggable = ui.draggable;
+  var droppable = $(this).data('input');
+  // ui.draggable.draggable( 'option', 'revert', false );
+  $(this).droppable('option', 'accept', ui.draggable);
+  // alert( 'The square with ID "' + ui.draggable.data('userid') + '" was dropped onto me!' );
+  $('#'+droppable).val(ui.draggable.data('userid'));
+  // $(this).animate({ borderTopColor: '#a8bf12', borderLeftColor: '#a8bf12', borderRightColor: '#a8bf12', borderBottomColor: '#a8bf12' }, 'slow');
+  // $(this).('h3').text(''
+  var $this = $(this);
+    ui.draggable.position({
+      my: "center",
+      at: "center",
+      of: $this,
+      using: function(pos) {
+        $(this).animate(pos, 200, "linear");
+      }
+    });
+}
+
+function handleDropOut( event, ui ) {
+	$(this).droppable('option', 'accept', '.member-item');
+	var droppable = $(this).data('input');
+	$('#'+droppable).val('');
+	// $(this).animate({ borderTopColor: '#ccc', borderLeftColor: '#ccc', borderRightColor: '#ccc', borderBottomColor: '#ccc' }, 'slow');
+}
+ 
+</script>
+
+<div id="content" style="height: 400px;">
+ 
+  <div id="partner-drop1" class="partner-drop" data-input="user_id1"><h3>Drop First Partner Here</h3></div>
+  <div id="partner-drop2" class="partner-drop" data-input="user_id2"><h3>Drop Second Partner Here</h3></div>
+ 
+</div>
 <?php
 }
 
@@ -645,25 +670,24 @@ function partnership_form_meta_box_handler($item)
  */
 function partnership_date_meta_box_handler($item)
 {
-    ?>
-    <p><strong>Created on:</strong> <?= date("m-d-Y, h:i A", strtotime($item['timestamp'])) ?></p>
-    <p><strong>Updated on:</strong> <?= date("m-d-Y, h:i A", strtotime($item['last_timestamp'])) ?></p>
-    <p><!-- <label> --><strong>Teammate:</strong> <?= $item['teammate'] ?>
-    	<!-- <select>
-    		<?php
-				$MyPartners = new Partners();
-				$MyPartners = $MyPartners->GetAvailable();
-			?>
-				<option value="<?= $item['teammate'] ?>"><strong><?= $item['teammate'] ?></strong></option>
-				<option value="None">None</option>
-			<?php
-				
-				foreach($MyPartners as $MyPartner) {
-					echo "<option value='$MyPartner->LastName, $MyPartner->FirstName'>". $MyPartner->LastName .", ". $MyPartner->FirstName ."</option>";
-				}
-		 	?>
-    	</select>
-    </label> --></p>
+?>
+			
+    <ul>
+    	<li class="member-items">
+    	<?php
+    	$OrderBy = 'industry';
+		$MyUsers = new Users();
+		$MyUsers = $MyUsers->GetAvailable($OrderBy);
+		foreach($MyUsers as $MyUser) {
+		?>
+    		<ul id="<?= $MyUser->LastName ?><?= $MyUser->UserId ?>" class="member-item" data-userid="<?= $MyUser->UserId ?>">
+	    		 <li><strong><?= $MyUser->FirstName ?> <?= $MyUser->LastName ?></strong></li>
+	    		 <li>Location: <?= $MyUser->Location ?></li>
+	    		 <li>Industry: <?= $MyUser->Industry ?></li>
+    		</ul>
+    		<?php } ?>
+    	</li>
+    </ul>
 <?php
 }
 /**
@@ -677,13 +701,13 @@ function validate_partnership($item)
 {
     $messages = array();
 
-    if (empty($item['first_name'])) $messages[] = __('First Name is required', 'custom_table_example');
-    if (empty($item['last_name'])) $messages[] = __('Last Name is required', 'custom_table_example');
-    if (!empty($item['email']) && !is_email($item['email'])) $messages[] = __('Email is in wrong format', 'custom_table_example');
-    if (empty($item['last_name'])) $messages[] = __('Last Name is required', 'custom_table_example');
-    if (!ctype_digit($item['age'])) $messages[] = __('Age in wrong format', 'custom_table_example');
-    if(!empty($item['age']) && !absint(intval($item['age'])))  $messages[] = __('Age can not be less than zero');
-    if(!empty($item['age']) && !preg_match('/[0-9]+/', $item['age'])) $messages[] = __('Age must be number');
+    // if (empty($item['user_id'])) $messages[] = __('You must select two partners.', 'custom_table_example');
+    // if (empty($item['last_name'])) $messages[] = __('Last Name is required', 'custom_table_example');
+    // if (!empty($item['email']) && !is_email($item['email'])) $messages[] = __('Email is in wrong format', 'custom_table_example');
+    // if (empty($item['last_name'])) $messages[] = __('Last Name is required', 'custom_table_example');
+    // if (!ctype_digit($item['age'])) $messages[] = __('Age in wrong format', 'custom_table_example');
+    // if(!empty($item['age']) && !absint(intval($item['age'])))  $messages[] = __('Age can not be less than zero');
+    // if(!empty($item['age']) && !preg_match('/[0-9]+/', $item['age'])) $messages[] = __('Age must be number');
     
 
     if (empty($messages)) return true;

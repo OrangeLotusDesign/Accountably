@@ -518,8 +518,6 @@ function custom_table_example_persons_form_page_handler()
     global $wpdb;
     $table_name = $wpdb->prefix . 'accountably_user'; // do not forget about tables prefix
 
-    $partnership_view = $wpdb->prefix . 'partnerships_v'; // do not forget about tables prefix
-
     $message = '';
     $notice = '';
 
@@ -586,7 +584,7 @@ function custom_table_example_persons_form_page_handler()
 
     // here we adding our custom meta box
     add_meta_box('persons_form_meta_box', 'Member Details', 'custom_table_example_persons_form_meta_box_handler', 'person', 'core', 'default');
-    add_meta_box('member_date_meta_box', 'Satus', 'member_date_meta_box_handler', 'person', 'side', 'default');
+    add_meta_box('member_date_meta_box', 'Status', 'member_date_meta_box_handler', 'person', 'side', 'default');
 
     ?>
 <div class="wrap">
@@ -609,7 +607,7 @@ function custom_table_example_persons_form_page_handler()
 		        <input type="hidden" name="nonce" value="<?php echo wp_create_nonce(basename(__FILE__))?>"/>
 		        <?php /* NOTICE: here we storing id to determine will be item added or updated */ ?>
 		        <input type="hidden" name="user_id" value="<?php echo $item['user_id'] ?>"/>
-		        <input type="hidden" name="active" value="1" id="active" />
+		        <!-- <input type="hidden" name="active" value="1" id="active" /> -->
                     <?php /* And here we call our custom meta box */ ?>
                     <?php do_meta_boxes('person', 'core', $item); ?>
                     
@@ -717,7 +715,7 @@ function custom_table_example_persons_form_meta_box_handler($item)
             <label for="goal">Active</label>
         </th>
         <td>
-            <input id="active" name="active" type="checkbox" <?php if (esc_attr($item['active']) == 1){echo "checked";} ?> value="1" required>
+            <input id="active" name="active" type="checkbox" <?php if (esc_attr($item['active']) == 1){echo "checked";} ?> value="1">
         </td>
     </tr>
     <tr class="form-field">
@@ -755,13 +753,12 @@ function member_date_meta_box_handler($item)
 		<?php
 			$MyPartners = new Partners();
 			$MyPartners = $MyPartners->GetById($item['user_id']);
-			
 			foreach($MyPartners as $MyPartner) {
-				$MyCopartners = new Partners();
-				$MyCopartners = $MyCopartners->GetCopartner($MyPartner->UserId, $MyPartner->PartnershipId);
-				foreach($MyCopartners as $MyCopartner) {
-					echo $MyCopartner->FirstName." ".$MyCopartner->LastName;
-				}
+			}
+			$MyCopartners = new Partners();
+			$MyCopartners = $MyCopartners->GetCopartner($MyPartner->UserId, $MyPartner->PartnershipId);
+			foreach($MyCopartners as $MyCopartner) {
+				echo $MyCopartner->FirstName." ".$MyCopartner->LastName;
 			}
 	 	?>
 	</p>
