@@ -196,6 +196,7 @@ echo '<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness
 <script type="text/javascript" src="'.plugins_url( 'js/jquery.validate.min.js' , __FILE__ ).'"></script>
 <script type="text/javascript" src="'.plugins_url( 'js/accountably-app.js' , __FILE__ ).'"></script>';
 echo "<script src='https://www.google.com/recaptcha/api.js'></script>";
+echo '<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>';
 
 wp_enqueue_script('mylib', plugins_url() . '/accountably/js/accountably-app.js');
 wp_localize_script('mylib', 'WPURLS', array( 'plugin_url' => get_option('plugin_url') ));

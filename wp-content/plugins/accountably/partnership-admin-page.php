@@ -562,15 +562,15 @@ function partnership_form_meta_box_handler($item)
 }
 .partner-drop {
 	float: left;
-	width: 300px;
-	height: 300px;
+	width: 30%;
+	height: auto;
 	margin: 20px;
 	padding: 40px;
 	border: dashed 1px #ccc;
 }
 .partner-drop h3 {
 	color: #ccc;
-	font-size: 24px;
+	font-size: 22px;
 	font-weight: 100;
 	text-align: center;
 }
@@ -634,6 +634,15 @@ function handleDropEvent( event, ui ) {
   $('#'+droppable).val(ui.draggable.data('userid'));
   // $(this).animate({ borderTopColor: '#a8bf12', borderLeftColor: '#a8bf12', borderRightColor: '#a8bf12', borderBottomColor: '#a8bf12' }, 'slow');
   // $(this).('h3').text(''
+  var newHeight = $(this).width() + 60;
+  $(draggable).animate({
+    // opacity: 0.25,
+    left: "+=50",
+    height: newHeight,
+    width: newHeight
+  }, 200, function() {
+    // Animation complete.
+  });
   var $this = $(this);
     ui.draggable.position({
       my: "center",
@@ -651,6 +660,21 @@ function handleDropOut( event, ui ) {
 	$('#'+droppable).val('');
 	// $(this).animate({ borderTopColor: '#ccc', borderLeftColor: '#ccc', borderRightColor: '#ccc', borderBottomColor: '#ccc' }, 'slow');
 }
+
+$( window ).load(function() {
+          resizeBoxes();
+          $(window).resize(resizeBoxes);
+
+          function resizeBoxes() {
+              //scale business and venue blocks and resize text accordingly
+              $(".partner-drop").each(function () {
+                  //get the initial height of every div
+                  var newHeight = $('.partner-drop').width();
+                  $(this).css("height", newHeight);
+                  $(this).css("font-size", newHeight / 8);
+              });
+          }
+        });
  
 </script>
 
