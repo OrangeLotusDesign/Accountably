@@ -19,6 +19,7 @@ $current_time = date('Y-m-d G:i:s');
 		$MyUser->Industry = $_POST['industry'];
 		$MyUser->Location = $_POST['location'];
 		$MyUser->Goal = $_POST['goal'];
+		$MyUser->TeamId = $_POST['team_id'];
 		$MyUser->Active = $_POST['active'];
 
 		$MyUser->Save();

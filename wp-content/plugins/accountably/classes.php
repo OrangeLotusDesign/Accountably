@@ -61,7 +61,7 @@ Class User {
       }
       else {
          $wpdb->Sql = 'INSERT INTO '.$wpdb->prefix.'accountably_user 
-                                  (wp_id, create_time, first_name, last_name, email, phone, age, job_title, industry, location, goal, active) 
+                                  (wp_id, create_time, first_name, last_name, email, phone, age, job_title, industry, location, goal, team_id, active) 
                                   VALUES
                                   (
                                     \'' . $this->WPId . '\',
@@ -75,6 +75,7 @@ Class User {
                                     \'' . $this->Industry .'\',
                                     \'' . $this->Location . '\',
                                     \'' . $this->Goal . '\',
+                                    \'' . $this->TeamId . '\',
                                     \'' . $this->Active .'\');';                  
       }
       $wpdb->query($wpdb->Sql);
@@ -392,6 +393,87 @@ Class Partnerships {
         // 
 
         $this->outputArray[$index] = $MyPartnership;
+    }
+  }
+}
+
+Class Team {
+
+   public $TeamId;
+   public $CreateTime = 0;
+   public $OrgName;
+   public $OrgSlug;
+
+   public function GetByTeam($TeamId) {
+      global $wpdb;
+      $dbResult = $wpdb->get_results('SELECT * FROM '.$wpdb->prefix.'accountably_team WHERE team_id = \'$TeamId\' LIMIT 1;');
+      $this->DBToParams($dbResult);
+
+      return $this; 
+   }
+
+   public function Save() {
+      global $wpdb;
+      
+    $check = intval($wpdb->get_var("SELECT count(team_id) FROM ".$wpdb->prefix."accountably_team WHERE team_id = ".$this->TeamId.";"));
+    if($check > 0) {      
+         $wpdb->Sql = 'UPDATE '.$wpdb->prefix.'accountably_team SET 
+          org_name       = \'' . $this->OrgName .'\',
+          org_slug       = \'' . $this->OrgSlug .'\'
+          WHERE team_id = \'' . $this->TeamId  . '\';';
+                
+      }
+      else {
+         $wpdb->Sql = 'INSERT INTO '.$wpdb->prefix.'accountably_team 
+                                  (create_time, org_name, org_slug) 
+                                  VALUES
+                                  (
+                                    \'' . $this->CreateTime . '\',
+                                    \'' . $this->OrgName . '\',
+                                    \'' . $this->OrgSlug . '\');';                  
+      }
+      $wpdb->query($wpdb->Sql);
+      
+      return $this;
+   }
+
+   private function DBToParams($objInstance) {
+      $this->TeamId             = $objInstance[0]->team_id;
+      $this->CreateTime        = $objInstance[0]->create_time;
+      $this->OrgName        = $objInstance[0]->org_name;
+      $this->OrgSlug        = $objInstance[0]->org_slug;
+   }
+}
+
+Class Teams {
+  private $outputArray = array();
+  
+  public function GetByTeam($TeamId) {
+      global $wpdb;
+      $dbResult = $wpdb->get_results("SELECT * FROM ".$wpdb->prefix."accountably_team WHERE team_id = '$TeamId';");
+      $this->DBToObjectArray($dbResult);
+
+      return $this->outputArray; 
+    }
+    
+    public function GetAll() {
+      global $wpdb;
+      $dbResult = $wpdb->get_results("SELECT * FROM ".$wpdb->prefix."accountably_team ORDER BY org_name ASC;");
+      $this->DBToObjectArray($dbResult);
+
+      return $this->outputArray; 
+    }
+  
+  private function DBToObjectArray($objInstance) {
+    foreach($objInstance as $index => $instance) {
+      $MyTeam = new Team();
+        $MyTeam->TeamId             = $instance->team_id;
+        $MyTeam->CreateTime        = $instance->create_time;
+        $MyTeam->OrgName       = $instance->org_name;
+        $MyTeam->OrgSlug       = $instance->org_slug;
+        // 
+
+        $this->outputArray[$index] = $MyTeam;
     }
   }
 }

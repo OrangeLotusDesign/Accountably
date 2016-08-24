@@ -67,6 +67,21 @@ get_currentuserinfo();
 					<input type="text" name="job_title" id="job_title" placeholder="President">
 				</label>
 			</div>
+			<div id="team-cb" class="medium-6 columns">
+				<input id="team" type="checkbox"><label for="team">Are you a member of a company team?*</label>
+			</div>
+			<div id="team-dd" class="medium-6 columns active">
+				<label>Company Team
+				<select id="team_id" name="team_id">
+					<option value="">Select Team</option>
+					<?php $MyTeams = new Teams();
+					$MyTeams = $MyTeams->GetAll();
+					foreach($MyTeams as $MyTeam) {
+					?>
+					<option value="<?= $MyTeam->TeamId ?>"><?= $MyTeam->OrgName ?></option>
+					<?php } ?>
+				</select>
+			</div>
 		</div>
 		<div class="row">
 			<div class="small-12 columns">

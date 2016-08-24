@@ -59,7 +59,7 @@ class Partnerships_List_Table extends WP_List_Table {
 
 		$wpdb->delete(
 			"{$wpdb->prefix}accountably_partners",
-			[ 'ID' => $id ],
+			[ 'partnership_id' => $id ],
 			[ '%d' ]
 		);
 	}
@@ -73,7 +73,7 @@ class Partnerships_List_Table extends WP_List_Table {
 	public static function record_count() {
 		global $wpdb;
 
-		$sql = "SELECT COUNT(*) FROM {$wpdb->prefix}partnerships_v";
+		$sql = "SELECT COUNT(*) FROM {$wpdb->prefix}partnerships_v WHERE active = 1";
 
 		return $wpdb->get_var( $sql );
 	}
@@ -95,17 +95,10 @@ class Partnerships_List_Table extends WP_List_Table {
 	 */
 	public function column_default( $item, $column_name ) {
 		switch ( $column_name ) {
-			case 'last_name':
-            case 'email':
-            case 'phone':
-            case 'age':
-            case 'job_title':
-            case 'industry':
-            case 'location':
-            case 'goal':
-            case 'teammate':
-            case 'confirmed':
-            case 'timestamp':
+			case 'partners':
+            case 'create_time':
+            case 'update_time':
+            case 'health':
 				return $item[ $column_name ];
 			default:
 				return print_r( $item, true ); //Show the whole array for troubleshooting purposes
@@ -115,37 +108,47 @@ class Partnerships_List_Table extends WP_List_Table {
 	/**
 	* Custom column methods.
 	**/
-    function column_last_name($item){
+    function column_partners($item){
         
         //Build row actions
         $actions = array(
-            'edit'      => sprintf('<a href="?page=persons_form&id=%s">%s</a>', $item['id'], __('Edit', 'custom_table_example')),
-            'delete'    => sprintf('<a href="?page=%s&action=%s&partner=%s">Delete</a>',$_REQUEST['page'],'delete',$item['id']),
+            'edit'      => sprintf('<a href="?page=partnerships_form&partnership_id=%s">%s</a>', $item['partnership_id'], __('Edit', 'custom_table_example')),
+            'delete'    => sprintf('<a href="?page=%s&action=%s&partnerships=%s">Delete</a>',$_REQUEST['page'],'delete',$item['partnership_id']),
         );
         
         //Return the title contents
-        return sprintf('<strong><a target="_blank" href="'.WP_PLUGIN_URL.'/accountably/edit-partner.php?action=edit&partner=%3$s">%1$s, %2$s</a></strong> %4$s',
-            /*$1%s*/ $item['last_name'],
-            /*$2%s*/ $item['first_name'],
-            /*$3%s*/ $item['id'],
-            /*$4%s*/ $this->row_actions($actions)
+        return sprintf('<strong><a target="_blank" href="'.WP_PLUGIN_URL.'/accountably/edit-partnership.php?action=edit&partnership=%2$s">%1$s</a></strong> %3$s',
+            /*$1%s*/ $item['partners'],
+            /*$2%s*/ $item['partnership_id'],
+            /*$3%s*/ $this->row_actions($actions)
         );
     }
 
-    function column_email($item){
+    // function column_email($item){
         
-        //Return the title contents
-        return sprintf('<a href="mailto:%1$s">%1$s</a>',
-            /*$1%s*/ $item['email']
-        );
-    }
+    //     //Return the title contents
+    //     return sprintf('<a href="mailto:%1$s">%1$s</a>',
+    //         /*$1%s*/ $item['email']
+    //     );
+    // }
 
-    function column_timestamp($item){
+    function column_create_time($item){
         
         //Return the title contents
         return sprintf('%1$s',
-            /*$1%s*/ date("m/d/Y - g:ia", strtotime($item['timestamp']))
+            /*$1%s*/ date("m/d/Y - g:ia", strtotime($item['create_time']))
         );
+    }
+
+    function column_update_time($item){
+        if ($item['update_time'] != NULL) {
+	        //Return the title contents
+	        return sprintf('%1$s',
+	            /*$1%s*/ date("m/d/Y - g:ia", strtotime($item['update_time']))
+	        );
+        } else {
+        	return "Not updated.";
+        }
     }
 
 	/**
@@ -157,7 +160,7 @@ class Partnerships_List_Table extends WP_List_Table {
 	 */
 	function column_cb( $item ) {
 		return sprintf(
-			'<input type="checkbox" name="bulk-delete[]" value="%s" />', $item['ID']
+			'<input type="checkbox" name="bulk-delete[]" value="%s" />', $item['partnership_id']
 		);
 	}
 
@@ -191,16 +194,10 @@ class Partnerships_List_Table extends WP_List_Table {
 	function get_columns() {
 		$columns = [
 			'cb'      => '<input type="checkbox" />',
-			'last_name'    => __( 'Name', 'sp' ),
-			'email' => __( 'Email', 'sp' ),
-			'phone' => __( 'Phone', 'sp' ),
-			'age' => __( 'Age', 'sp' ),
-			'job_title' => __( 'Title', 'sp' ),
-			'industry' => __( 'Industry', 'sp' ),
-			'location' => __( 'Location', 'sp' ),
-			'goal' => __( 'Goal', 'sp' ),
-			'teammate' => __( 'Teammate', 'sp' ),
-			'timestamp'    => __( 'Created On', 'sp' )
+			'partners'    => __( 'Partners', 'sp' ),
+			'create_time' => __( 'Created On', 'sp' ),
+			'update_time' => __( 'Updated On', 'sp' ),
+			'health' => __( 'Health', 'sp' )
 		];
 
 		return $columns;
@@ -214,13 +211,10 @@ class Partnerships_List_Table extends WP_List_Table {
 	 */
 	public function get_sortable_columns() {
 		$sortable_columns = array(
-			'last_name'     => array('last_name',false),
-            'age'     => array('age',false),
-            'job_title'     => array('title',false),
-            'industry'     => array('industry',false),
-            'location'     => array('location',false),
-            'teammate'     => array('teammate',false),
-            'timestamp'     => array('timestamp',false)
+			'partners'     => array('partners',false),
+            'create_time'     => array('create_time',false),
+            'update_time'     => array('update_time',false),
+            'health'     => array('health',false)
 		);
 
 		return $sortable_columns;
@@ -336,7 +330,6 @@ class SP_Partnerships_Plugin {
 		add_submenu_page('accountably', 'Add new', 'Add new', 'activate_plugins', 'partnerships_form', 'partnership_form_page_handler');
 	}
 
-
 	/**
 	 * Plugin settings page
 	 */
@@ -344,7 +337,7 @@ class SP_Partnerships_Plugin {
 		?>
 		<div class="wrap">
 			<h2>Accountably Partners <a class="add-new-h2"
-                                 href="<?php echo get_admin_url(get_current_blog_id(), 'admin.php?page=persons_form');?>">Add new</a></h2>
+                                 href="<?php echo get_admin_url(get_current_blog_id(), 'admin.php?page=partnerships_form');?>">Add new</a></h2>
 
 			<div id="poststuff">
 				<div id="post-body" class="metabox-holder columns-1">
@@ -373,7 +366,7 @@ class SP_Partnerships_Plugin {
 
 		$option = 'per_page';
 		$args   = [
-			'label'   => 'Partners',
+			'label'   => 'Partnerships',
 			'default' => 10,
 			'option'  => 'customers_per_page'
 		];
@@ -455,20 +448,58 @@ function partnership_form_page_handler()
         if ($item_valid === true) {
             if ($item['partnership_id'] == 0) {
                 $result = $wpdb->insert($table_name, $item);
-                //need to update each user to set availability to 0. All of this is probably best done through an ajax call that creates the relationship and updates the users.
+
                 $relation['partnership_id'] = $wpdb->insert_id;
-                // $relation['user_id'][ ] = 16;
-                // $relation['user_id'][ ] = 17;
-				    // $color_fruit is an array
+
 				    foreach ($relation['user_id'] as $partner) {
-				    	// echo "Partnership ID: ".$relation['partnership_id']." User ID: ".$partner;
-				    	// $message = __("Partnership ID: ".$relation['partnership_id']." User ID: ".$user_id, 'custom_table_example');
 		                $result = $wpdb->insert($relational_table, array('partnership_id'=>$relation['partnership_id'], 'user_id'=>$partner));
 		                $result = $wpdb->update($user_table, array('available'=>0), array('user_id'=>$partner));
 				    }
                 if ($result) {
                     $message = __('Partnership was successfully saved', 'custom_table_example');
-                    // $new_partnership = 
+                    function wpdocs_set_html_mail_content_type() {
+					    return 'text/html';
+					}
+					add_filter( 'wp_mail_content_type', 'wpdocs_set_html_mail_content_type' );
+                    foreach ($relation['user_id'] as $partner) {
+                    	$MyUsers = new Users();
+						$MyUsers = $MyUsers->GetById($partner);
+						foreach($MyUsers as $MyUser) {
+		                    /**
+							 * Filter the mail content type.
+							 */
+							
+							$headers[] = 'From: Me Myself <alex@orangelotusdesign.com>';
+							$headers[] = array('Content-Type: text/html; charset=UTF-8');
+							 
+							$to      = $MyUser->Email;
+							$subject = 'Welcome to Accountably';
+							$body    = '<h1>"The benefits of an accountability partner have been studied and proven. The hardest part is getting started and forming the habit."</h1>
+
+										<p>Dre here. It’s the big day! We’ve matched you as Accountably partners and it’s time to get cranking on those goals.</p> 
+
+										<p>This is important for what comes next: to let me know that you’ve received this email, click here.</p>
+
+										<p>Now, don’t stress. You two are not in this alone. Here’s the best way to set up your partnership for success:</p>
+
+										<p>1. Connect with your partner. Make contact with one another in the next 72 hours. Ideally, this would be a phone call, but if that’s not possible, at least let the other person know you’re alive and get a kick off call on the schedule.</p>
+
+										<p>2. Read the attached PDF. This will give you instructions on how to best launch this partnership for ultimate success.</p>
+
+										<p>3. Watch the weekly live webinar on Tuesday at 7PM EST. We’ll walk you through how to get on the right road to an ideal partnership, and you’ll have a chance to ask questions. Here’s the link to RSVP:</p>
+
+										<p>4. Join the Accountably Slack page. I’ll send you each an email inviting you in just a moment. This is a good way for us to be able to help your partnership if you get stuck, so sign up as quickly as you can.</p>
+
+										<p>Nail this stuff and joining Accountably will be the best thing you do all year.</p>
+
+										<p>Rock on,<br>
+										- Dre</p>';
+							 
+							wp_mail( $to, $subject, $body );
+						}
+					}
+				// Reset content-type to avoid conflicts -- https://core.trac.wordpress.org/ticket/23578
+				remove_filter( 'wp_mail_content_type', 'wpdocs_set_html_mail_content_type' );
                 } else {
                     $notice = __('There was an error while saving the partnership', 'custom_table_example');
                 }
@@ -498,14 +529,14 @@ function partnership_form_page_handler()
     }
 
     // here we adding our custom meta box
-    add_meta_box('persons_form_meta_box', 'Create Partnership', 'partnership_form_meta_box_handler', 'person', 'core', 'default');
-    add_meta_box('member_date_meta_box', 'Available Members', 'partnership_date_meta_box_handler', 'person', 'side', 'default');
+    add_meta_box('persons_form_meta_box', 'Create Partnership', 'partnership_form_meta_box_handler', 'partnership', 'core', 'default');
+    add_meta_box('member_date_meta_box', 'Available Members', 'partnership_date_meta_box_handler', 'partnership', 'side', 'default');
 
     ?>
 <div class="wrap">
     <div class="icon32 icon32-posts-post" id="icon-edit"><br></div>
-    <h2>Partner <a class="add-new-h2"
-                                href="<?php echo get_admin_url(get_current_blog_id(), 'admin.php?page=accountably');?>"><?php _e('back to list', 'custom_table_example')?></a>
+    <h2>New Partnership <a class="add-new-h2"
+                                href="<?php echo get_admin_url(get_current_blog_id(), 'admin.php?page=partnerships');?>"><?php _e('back to list', 'custom_table_example')?></a>
     </h2>
 
     <?php if (!empty($notice)): ?>
@@ -526,14 +557,14 @@ function partnership_form_page_handler()
 		        <input type="hidden" name="user_id[]" value="" id="user_id2" />
 		        <input type="hidden" name="active" value="1" id="active" />
                     <?php /* And here we call our custom meta box */ ?>
-                    <?php do_meta_boxes('person', 'core', $item); ?>
+                    <?php do_meta_boxes('partnership', 'core', $item); ?>
                     
                     <input type="submit" value="<?php _e('Create Partnership', 'custom_table_example')?>" id="submit" class="button-primary" name="submit">
 			    </form>
             </div>
             <div id="postbox-container-1" class="postbox-container">
 			    <div id="side-sortables" class="meta-box-sortables ui-sortable">
-					<?php do_meta_boxes('person', 'side', $item); ?>
+					<?php do_meta_boxes('partnership', 'side', $item); ?>
 			    </div>
 		    </div>
         </div>

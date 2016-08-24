@@ -75,6 +75,16 @@ $("#signup_form").validate({
 	    });
 	});
 
+	$('#team').click(function() {
+	    var $this = $(this);
+	    if ($this.is(':checked')) {
+		        $('#team-cb').fadeOut(400, function(){
+	            $('#team-dd').fadeIn(400);
+	        });
+	    } else {
+	    }
+	});
+
 // setInterval(function(){
 //   var form = $('#volunteer_form');
 //   var method = form.attr('method').toLowerCase();      // "get" or "post"

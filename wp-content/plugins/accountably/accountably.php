@@ -27,6 +27,7 @@ $accountably_team_sql = "CREATE TABLE IF NOT EXISTS $accountably_team(
     team_id int(11) unsigned NOT NULL AUTO_INCREMENT,
     create_time timestamp NULL DEFAULT CURRENT_TIMESTAMP,
     org_name varchar(45) DEFAULT NULL,
+    org_slug varchar(45) DEFAULT NULL,
     PRIMARY KEY (team_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1;";
 
@@ -89,7 +90,7 @@ $accountably_checkins_sql .= "CREATE TABLE IF NOT EXISTS $accountably_checkins (
   CONSTRAINT user_id_chk FOREIGN KEY (user_id) REFERENCES $accountably_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;";
 
-$partnerships_v_sql .= "CREATE  OR REPLACE VIEW $partnerships_v
+$partnerships_detail_v_sql .= "CREATE  OR REPLACE VIEW $partnerships_detail_v
     AS SELECT
       au.user_id, 
       au.first_name,
@@ -116,6 +117,25 @@ $partnerships_v_sql .= "CREATE  OR REPLACE VIEW $partnerships_v
       $accountably_user AS au ON au.user_id = aps.user_id
     LEFT JOIN
       $accountably_partnership AS ap ON ap.partnership_id = aps.partnership_id;";
+
+$partnerships_v_sql .= "CREATE  OR REPLACE VIEW $partnerships_v
+    AS SELECT
+        ap.partnership_id,
+        GROUP_CONCAT(au.user_id) user_ids,
+        GROUP_CONCAT(au.wp_id) wp_ids,
+        GROUP_CONCAT(au.last_name,', ',au.first_name SEPARATOR ' & ') partners,
+        ap.health,
+        ap.notes,
+        ap.create_time,
+        ap.update_time,
+        ap.active
+    FROM
+        $accountably_partnerships AS aps
+            INNER JOIN
+        $accountably_user AS au ON au.user_id = aps.user_id
+          INNER JOIN
+        $accountably_partnership AS ap ON ap.partnership_id = aps.partnership_id
+    GROUP   BY ap.partnership_id;";
 
 $team_members_v_sql .= "CREATE  OR REPLACE VIEW $team_members_v
   AS SELECT
@@ -163,6 +183,7 @@ $wpdb->query($accountably_user_sql);
 $wpdb->query($accountably_partnership_sql);
 $wpdb->query($accountably_partnerships_sql);
 $wpdb->query($accountably_checkins_sql);
+$wpdb->query($partnerships_detail_v_sql);
 $wpdb->query($partnerships_v_sql);
 $wpdb->query($team_members_v_sql);
 $wpdb->query($checkins_v_sql);
@@ -185,10 +206,10 @@ add_action('init', 'init_sessions');
 add_action('wp_head', 'the_form_header');
 function the_form_header() {
 $file = accountably.php;
-if(@file_exists(TEMPLATEPATH.'/accountably-app.css')) {
-    echo '<link rel="stylesheet" href="'.get_stylesheet_directory_uri().'/accountably-app.css" type="text/css" media="screen" />'."\n"; 
+if(@file_exists(TEMPLATEPATH.'/css/accountably.css')) {
+    echo '<link rel="stylesheet" href="'.get_stylesheet_directory_uri().'/css/accountably.css" type="text/css" media="screen" />'."\n"; 
   } else {
-    echo '<link rel="stylesheet" href="'.WP_PLUGIN_URL.'/accountably/accountably-app.css" type="text/css" media="screen" />'."\n";
+    echo '<link rel="stylesheet" href="'.WP_PLUGIN_URL.'/accountably/css/accountably.css" type="text/css" media="screen" />'."\n";
   }
 echo '<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
 <script type="text/javascript" src="'.plugins_url( 'js/jquery-2.2.1.min.js' , __FILE__ ).'"></script>
@@ -196,7 +217,7 @@ echo '<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness
 <script type="text/javascript" src="'.plugins_url( 'js/jquery.validate.min.js' , __FILE__ ).'"></script>
 <script type="text/javascript" src="'.plugins_url( 'js/accountably-app.js' , __FILE__ ).'"></script>';
 echo "<script src='https://www.google.com/recaptcha/api.js'></script>";
-echo '<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>';
+// echo '<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>';
 
 wp_enqueue_script('mylib', plugins_url() . '/accountably/js/accountably-app.js');
 wp_localize_script('mylib', 'WPURLS', array( 'plugin_url' => get_option('plugin_url') ));
@@ -205,9 +226,9 @@ wp_localize_script('mylib', 'WPURLS', array( 'plugin_url' => get_option('plugin_
 function admin_header() {
 $file = accountably.php;
 if(@file_exists(TEMPLATEPATH.'/accountably-app.css')) {
-    echo '<link rel="stylesheet" href="'.get_stylesheet_directory_uri().'/accountably-app.css" type="text/css" media="screen" />'."\n"; 
+    echo '<link rel="stylesheet" href="'.get_stylesheet_directory_uri().'/css/accountably.css" type="text/css" media="screen" />'."\n"; 
   } else {
-    echo '<link rel="stylesheet" href="'.WP_PLUGIN_URL.'/accountably/accountably-app.css" type="text/css" media="screen" />'."\n";
+    echo '<link rel="stylesheet" href="'.WP_PLUGIN_URL.'/accountably/css/accountably.css" type="text/css" media="screen" />'."\n";
   }
 }
 add_action('admin_head', 'admin_header');
