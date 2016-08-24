@@ -473,7 +473,7 @@ function partnership_form_page_handler()
 							$headers[] = array('Content-Type: text/html; charset=UTF-8');
 							 
 							$to      = $MyUser->Email;
-							$subject = 'Welcome to Accountably';
+							$subject = 'You have a new Accountably partner!';
 							$body    = '<h1>"The benefits of an accountability partner have been studied and proven. The hardest part is getting started and forming the habit."</h1>
 
 										<p>Dre here. It’s the big day! We’ve matched you as Accountably partners and it’s time to get cranking on those goals.</p> 
